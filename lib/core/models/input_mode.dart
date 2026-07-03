@@ -1,0 +1,4 @@
+enum InputMode {
+  finger,
+  stylus,
+}
