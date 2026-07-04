@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+
 enum SatelliteFlightType { spawn, theme, recenter, wipe, sink }
 enum SatelliteFlightPhase { none, outgoing, impact, returning }
 
@@ -64,11 +66,11 @@ class _SatelliteFlightRendererState extends State<SatelliteFlightRenderer> {
         width: 10,
         height: 10,
         decoration: BoxDecoration(
-          color: Colors.amber,
+          color: AppColors.familiarGlow,
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.amber.withValues(alpha: 0.5),
+              color: AppColors.familiarGlow.withValues(alpha: 0.5),
               blurRadius: 10,
               spreadRadius: 2,
             )

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../../core/theme/app_colors.dart';
 
 enum FamiliarState {
   idle,
@@ -51,7 +52,7 @@ class FamiliarWidget extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.amber.withValues(alpha: 0.3),
+                        color: AppColors.familiarGlow.withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 10,
                       ),
@@ -70,15 +71,16 @@ class FamiliarWidget extends StatelessWidget {
                   gradient: const RadialGradient(
                     colors: [
                       Colors.yellowAccent,
-                      Colors.amberAccent,
-                      Colors.amber,
+                      AppColors.familiarAccent,
+                      AppColors.familiarGlow,
                     ],
+                    stops: [0.2, 0.6, 1.0],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.amber.withValues(alpha: 0.7),
+                      color: AppColors.familiarGlow.withValues(alpha: 0.7),
                       blurRadius: 15,
-                      spreadRadius: 2,
+                      spreadRadius: 5,
                     ),
                   ],
                 ),
@@ -89,8 +91,8 @@ class FamiliarWidget extends StatelessWidget {
                 ...List.generate(6, (index) {
                   return const Positioned(
                     child: CircleAvatar(
-                      radius: 3,
-                      backgroundColor: Colors.amberAccent,
+                      radius: 2,
+                      backgroundColor: AppColors.familiarAccent,
                     ),
                   ).animate(onPlay: (controller) => controller.repeat())
                    .fadeIn(duration: 400.ms)

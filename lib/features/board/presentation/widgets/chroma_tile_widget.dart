@@ -2,9 +2,10 @@ import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/models/chroma_tile.dart';
 import '../../../../core/models/stroke.dart' as model_stroke;
+import '../../../../core/theme/app_colors.dart';
 
 class ChromaTileWidget extends ConsumerStatefulWidget {
   final ChromaTile tile;
@@ -61,8 +62,8 @@ class _ChromaTileWidgetState extends ConsumerState<ChromaTileWidget> {
   Widget build(BuildContext context) {
     final bgColor = _parseColor(widget.tile.colorHex);
     final borderColor = widget.isDarkMode 
-        ? Colors.white.withValues(alpha: 0.15) 
-        : Colors.black.withValues(alpha: 0.12);
+        ? AppColors.borderDark 
+        : AppColors.borderLight;
 
     return Positioned(
       left: widget.tile.x,
@@ -103,10 +104,10 @@ class _ChromaTileWidgetState extends ConsumerState<ChromaTileWidget> {
                     right: 0,
                     height: 36,
                     child: Container(
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.black.withValues(alpha: 0.08),
+                            color: AppColors.tileHeaderShadow,
                           ),
                         ),
                       ),
@@ -117,15 +118,15 @@ class _ChromaTileWidgetState extends ConsumerState<ChromaTileWidget> {
                           Expanded(
                             child: Text(
                               widget.tile.title,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black.withValues(alpha: 0.8),
-                              ),
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.tileText,
+                                  ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Icon(LucideIcons.gripVertical, size: 16, color: Colors.black.withValues(alpha: 0.3)),
+                          const Icon(LucideIcons.gripVertical, size: 16, color: AppColors.tileIcon),
                         ],
                       ),
                     ),
@@ -141,10 +142,10 @@ class _ChromaTileWidgetState extends ConsumerState<ChromaTileWidget> {
                       padding: const EdgeInsets.all(12),
                       child: Text(
                         widget.tile.content,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black.withValues(alpha: 0.8),
-                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontSize: 14,
+                              color: AppColors.tileText,
+                            ),
                       ),
                     ),
                   ),

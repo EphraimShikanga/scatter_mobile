@@ -3,38 +3,42 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 class AppTypography {
-  static TextTheme get textTheme {
+  static TextTheme textTheme(Brightness brightness) {
+    final textColor = brightness == Brightness.dark
+        ? AppColors.textPrimary
+        : AppColors.matteBlack;
+
     return TextTheme(
       displayLarge: GoogleFonts.spaceGrotesk(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w700,
       ),
       displayMedium: GoogleFonts.spaceGrotesk(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w600,
       ),
       displaySmall: GoogleFonts.spaceGrotesk(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w500,
       ),
       bodyLarge: GoogleFonts.inter(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w400,
       ),
       bodyMedium: GoogleFonts.inter(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w400,
       ),
       bodySmall: GoogleFonts.inter(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w300,
       ),
       labelLarge: GoogleFonts.jetBrainsMono(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w500,
       ),
       labelMedium: GoogleFonts.jetBrainsMono(
-        color: AppColors.textPrimary,
+        color: textColor,
         fontWeight: FontWeight.w400,
       ),
     );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class RadialMenuWidget extends StatefulWidget {
   final bool isDarkMode;
@@ -61,12 +61,10 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: widget.isDarkMode 
-                    ? Colors.grey.shade900.withValues(alpha: 0.95)
-                    : Colors.white.withValues(alpha: 0.95),
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: widget.isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 boxShadow: [
                   BoxShadow(
@@ -84,7 +82,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 8),
             decoration: BoxDecoration(
-              color: widget.isDarkMode ? Colors.grey.shade800 : Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
@@ -100,12 +98,12 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                 IconButton(
                   icon: const Icon(LucideIcons.plus),
                   onPressed: () => widget.onAddTile(null),
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 IconButton(
                   icon: Icon(widget.isDarkMode ? LucideIcons.sun : LucideIcons.moon),
                   onPressed: widget.onToggleDarkMode,
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 IconButton(
                   icon: const Icon(LucideIcons.zoomIn),
@@ -115,7 +113,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                       if (_showZoomSlider) _showHelp = false;
                     });
                   },
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 IconButton(
                   icon: const Icon(LucideIcons.helpCircle),
@@ -125,7 +123,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                       if (_showHelp) _showZoomSlider = false;
                     });
                   },
-                  color: widget.isDarkMode ? Colors.white : Colors.black,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 IconButton(
                   icon: const Icon(LucideIcons.trash2),
@@ -149,19 +147,19 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           children: [
             Text(
               'VIEWPORT ZOOM SCALE',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
-              ),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
             Text(
               '${(widget.zoom * 100).round()}%',
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: Colors.orange,
-              ),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.orange,
+                  ),
             ),
           ],
         ),
@@ -171,7 +169,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           min: 0.15,
           max: 2.0,
           onChanged: widget.onZoomChange,
-          activeColor: widget.isDarkMode ? Colors.white : Colors.black,
+          activeColor: Theme.of(context).colorScheme.onSurface,
         ),
       ],
     );
@@ -183,11 +181,11 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
       children: [
         Text(
           'CANVAS INTERACTION MODEL',
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: widget.isDarkMode ? Colors.white70 : Colors.black54,
-          ),
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
         const SizedBox(height: 8),
         _buildHelpRow('Spawn Chroma Tile', 'Double-tap workspace'),
@@ -203,8 +201,17 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500)),
-          Text(value, style: const TextStyle(fontSize: 9)),
+          Text(
+            label, 
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontSize: 10, 
+                  fontWeight: FontWeight.w500
+                )
+          ),
+          Text(
+            value, 
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 9)
+          ),
         ],
       ),
     );
