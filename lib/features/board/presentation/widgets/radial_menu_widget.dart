@@ -105,22 +105,36 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                 ),
               ),
               
-              AnimatedSize(
-                duration: const Duration(milliseconds: 350),
+              TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 550),
                 curve: Curves.easeOutBack,
-                alignment: Alignment.centerLeft,
-                clipBehavior: Clip.hardEdge,
-                child: widget.isMenuOpen
-                    ? AnimatedOpacity(
-                        duration: const Duration(milliseconds: 250),
-                        opacity: widget.isMenuOpen ? 1.0 : 0.0,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                            child: Container(
-                              height: 48,
-                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                tween: Tween<double>(begin: 0.0, end: widget.isMenuOpen ? 1.0 : 0.0),
+                builder: (context, value, child) {
+                  // Prevent negative widthFactor/opacity when using bouncy curves
+                  final clampedValue = value.clamp(0.0, double.infinity);
+                  final opacityValue = value.clamp(0.0, 1.0);
+                  
+                  return ClipRect(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: clampedValue,
+                      child: Opacity(
+                        opacity: opacityValue,
+                        child: Transform.translate(
+                          offset: Offset(-15 * (1 - opacityValue), 0),
+                          child: child,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
                               decoration: BoxDecoration(
                                 color: bgColor,
                                 borderRadius: BorderRadius.circular(24),
@@ -218,8 +232,6 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                             ),
                           ),
                         ),
-                      )
-                    : const SizedBox.shrink(),
               ),
             ],
           )
@@ -232,8 +244,8 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
     return GestureDetector(
       onTap: () => widget.onAddTile(name),
       child: Container(
-        width: 28, // w-7
-        height: 28, // h-7
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: _parseColor(hex),
           shape: BoxShape.circle,
@@ -244,7 +256,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           ),
         ),
         child: const Center(
-          child: Icon(LucideIcons.plus, size: 11, color: Color(0xFF171717)),
+          child: Icon(LucideIcons.plus, size: 14, color: Color(0xFF171717)),
         ),
       ),
     );
@@ -262,7 +274,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: isActive ? FontWeight.w900 : FontWeight.bold,
             letterSpacing: 1.0,
             color: isActive 
@@ -283,7 +295,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(8),
         margin: const EdgeInsets.symmetric(horizontal: 2),
         decoration: BoxDecoration(
           color: isActive ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
@@ -291,7 +303,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
         ),
         child: Icon(
           icon,
-          size: 13,
+          size: 16,
           color: iconOverrideColor ?? (isActive 
               ? Colors.amber.shade600 
               : (widget.isDarkMode ? const Color(0xFFA3A3A3) : const Color(0xFF737373))),

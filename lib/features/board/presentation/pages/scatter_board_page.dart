@@ -154,65 +154,83 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                 ),
               ),
 
-              // Radial Menu
-              RadialMenuWidget(
-                isDarkMode: isDarkMode,
-                onToggleDarkMode: () {},
-                activeColor: _activeColor,
-                onColorChange: (c) => setState(() => _activeColor = c),
-                activeThickness: _activeThickness,
-                onThicknessChange: (t) => setState(() => _activeThickness = t),
-                onAddTile: (clusterId) {
-                  final newTile = ChromaTile(
-                    id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
-                    x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
-                    y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
-                    width: 280,
-                    height: 220,
-                    colorName: 'custom',
-                    colorHex: _activeColor,
-                    title: 'New Note',
-                    content: '',
-                    strokes: [],
-                    isArchived: false,
-                    createdAt: DateTime.now().millisecondsSinceEpoch,
+              // The Gamified Spatial Familiar System (Animated reactive positioning)
+              TweenAnimationBuilder<Offset>(
+                duration: const Duration(milliseconds: 550),
+                curve: Curves.easeOutBack,
+                tween: Tween<Offset>(
+                  begin: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
+                  end: Offset(
+                    (MediaQuery.of(context).size.width / 2) + (_isMenuOpen ? -205.0 : 0.0),
+                    MediaQuery.of(context).size.height - 56,
+                  ),
+                ),
+                builder: (context, animatedFamiliarPos, child) {
+                  return Stack(
+                    children: [
+                      // Radial Menu
+                      RadialMenuWidget(
+                        isDarkMode: isDarkMode,
+                        onToggleDarkMode: () {},
+                        activeColor: _activeColor,
+                        onColorChange: (c) => setState(() => _activeColor = c),
+                        activeThickness: _activeThickness,
+                        onThicknessChange: (t) => setState(() => _activeThickness = t),
+                        onAddTile: (clusterId) {
+                          final newTile = ChromaTile(
+                            id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
+                            x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
+                            y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
+                            width: 280,
+                            height: 220,
+                            colorName: 'custom',
+                            colorHex: _activeColor,
+                            title: 'New Note',
+                            content: '',
+                            strokes: [],
+                            isArchived: false,
+                            createdAt: DateTime.now().millisecondsSinceEpoch,
+                          );
+                          ref.read(tilesStateProvider.notifier).addTile(newTile);
+                        },
+                        onClearCanvas: () {
+                          ref.read(tilesStateProvider.notifier).clear();
+                        },
+                        onResetCamera: () {
+                          ref.read(viewportStateProvider.notifier).reset();
+                        },
+                        isOrbitMode: false,
+                        zoom: viewport.zoom,
+                        onZoomChange: (z) {
+                          ref.read(viewportStateProvider.notifier).updateViewport(zoom: z);
+                        },
+                        isMenuOpen: _isMenuOpen,
+                        onToggleMenu: () => setState(() => _isMenuOpen = !_isMenuOpen),
+                        familiarX: animatedFamiliarPos.dx,
+                      ),
+
+                      // Familiar Orb
+                      FamiliarWidget(
+                        state: FamiliarState.idle,
+                        position: animatedFamiliarPos,
+                        isDarkMode: isDarkMode,
+                        isSatelliteFlying: false,
+                        onOrbClick: () => setState(() => _isMenuOpen = !_isMenuOpen),
+                      ),
+
+                      // Satellite Flight Renderer
+                      SatelliteFlightRendererWidget(
+                        flight: SatelliteFlightState.idle,
+                        familiarPos: animatedFamiliarPos,
+                        isDarkMode: isDarkMode,
+                        isMenuOpen: _isMenuOpen,
+                        zoomScale: viewport.zoom,
+                        screenSize: MediaQuery.of(context).size,
+                        selectedTileScreenPos: null, // to be updated when focus mode works
+                      ),
+                    ],
                   );
-                  ref.read(tilesStateProvider.notifier).addTile(newTile);
                 },
-                onClearCanvas: () {
-                  ref.read(tilesStateProvider.notifier).clear();
-                },
-                onResetCamera: () {
-                  ref.read(viewportStateProvider.notifier).reset();
-                },
-                isOrbitMode: false,
-                zoom: viewport.zoom,
-                onZoomChange: (z) {
-                  ref.read(viewportStateProvider.notifier).updateViewport(zoom: z);
-                },
-                isMenuOpen: _isMenuOpen,
-                onToggleMenu: () => setState(() => _isMenuOpen = !_isMenuOpen),
-                familiarX: MediaQuery.of(context).size.width / 2,
-              ),
-
-              // Familiar Orb
-              FamiliarWidget(
-                state: FamiliarState.idle,
-                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
-                isDarkMode: isDarkMode,
-                isSatelliteFlying: false,
-                onOrbClick: () => setState(() => _isMenuOpen = !_isMenuOpen),
-              ),
-
-              // Satellite Flight Renderer
-              SatelliteFlightRendererWidget(
-                flight: SatelliteFlightState.idle,
-                familiarPos: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
-                isDarkMode: isDarkMode,
-                isMenuOpen: _isMenuOpen,
-                zoomScale: viewport.zoom,
-                screenSize: MediaQuery.of(context).size,
-                selectedTileScreenPos: null, // to be updated when focus mode works
               ),
             ],
           ),
