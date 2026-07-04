@@ -99,8 +99,9 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
             final cardW = widget.selectedTileSize?.width ?? 280.0 * widget.zoomScale;
             final cardH = widget.selectedTileSize?.height ?? 240.0 * widget.zoomScale;
 
-            final rx = cardW / 2 + 42 * widget.zoomScale;
-            final ry = cardH / 2 + 38 * widget.zoomScale;
+            // The HUD is unscaled, so orbit radius should be constant
+            final rx = 80.0;
+            final ry = 40.0;
 
             if (widget.flight.phase == 'none') {
               if (widget.selectedTileScreenPos != null) {
@@ -121,7 +122,7 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
 
             Offset basePos = widget.familiarPos;
             if (widget.selectedTileScreenPos != null) {
-              basePos = Offset(widget.selectedTileScreenPos!.dx, widget.selectedTileScreenPos!.dy + cardH / 2);
+              basePos = Offset(widget.selectedTileScreenPos!.dx + cardW / 2, widget.selectedTileScreenPos!.dy + cardH / 2);
             }
 
             final dotColor = _parseColor(widget.selectedTileColorHex);
@@ -194,11 +195,11 @@ class _SatellitePainter extends CustomPainter {
         final ty = sin(trailTime * 0.25) * ry;
         final opacity = 0.5 * (1 - i / 6);
         final scale = 1 - i * 0.1;
-        final trailSize = max(2.5, 6.5 * zoomScale) * scale;
+        final trailSize = max(2.5, 6.5) * scale;
         
         final paint = Paint()
           ..color = dotColor.withValues(alpha: opacity)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10 * zoomScale);
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
         
         canvas.drawCircle(Offset(basePos.dx + tx, basePos.dy + ty), trailSize / 2, paint);
         
@@ -227,7 +228,7 @@ class _SatellitePainter extends CustomPainter {
           ],
           stops: const [0.0, 0.2, 0.6, 1.0],
         ).createShader(Rect.fromLTRB(0, -distance, distance, distance))
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, max(2.0, 10 * zoomScale));
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10.0);
 
       final path = Path();
       path.moveTo(0, -4);
@@ -249,7 +250,7 @@ class _SatellitePainter extends CustomPainter {
       
       final corePaint = Paint()
         ..shader = beamPaint.shader
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, max(1.0, 4 * zoomScale))
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0)
         ..color = Colors.white.withValues(alpha: 0.35);
         
       canvas.drawPath(corePath, corePaint);
@@ -258,30 +259,26 @@ class _SatellitePainter extends CustomPainter {
     }
 
     // 3. Main glowing physical particle
-    final satelliteSize = max(5.0, 11 * zoomScale);
-    final innerDotSize = max(1.5, 3.5 * zoomScale);
-    
     // Outer glow
     final glowPaint = Paint()
       ..color = flightColor
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 14 * zoomScale);
-    canvas.drawCircle(satelliteCenter, satelliteSize / 2, glowPaint);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14.0);
+    canvas.drawCircle(satelliteCenter, 5.5, glowPaint);
     
     // Outer secondary glow
-    final glowPaint2 = Paint()
-      ..color = flightColor.withValues(alpha: 0.5)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 24 * zoomScale);
-    canvas.drawCircle(satelliteCenter, satelliteSize / 2, glowPaint2);
-
-    // Inner physical body
-    final bodyPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(satelliteCenter, satelliteSize / 2, bodyPaint);
+    final corePaint = Paint()
+      ..color = dotColor.withValues(alpha: 0.9)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+    canvas.drawCircle(satelliteCenter, 4.0, corePaint);
+    
+    final innerPaint = Paint()..color = Colors.white;
+    canvas.drawCircle(satelliteCenter, 1.5, innerPaint);
     
     // Inner white dot
     final dotPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.95)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
-    canvas.drawCircle(satelliteCenter, innerDotSize / 2, dotPaint);
+    canvas.drawCircle(satelliteCenter, 0.75, dotPaint);
 
   }
 

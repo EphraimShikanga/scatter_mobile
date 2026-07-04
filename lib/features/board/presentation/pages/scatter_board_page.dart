@@ -7,6 +7,7 @@ import '../widgets/chroma_tile_widget.dart';
 import '../widgets/radial_menu_widget.dart';
 import '../widgets/familiar_widget.dart';
 import '../widgets/satellite_flight_renderer_widget.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/models/chroma_tile.dart';
 
 class ScatterBoardPage extends ConsumerStatefulWidget {
@@ -16,11 +17,51 @@ class ScatterBoardPage extends ConsumerStatefulWidget {
   ConsumerState<ScatterBoardPage> createState() => _ScatterBoardPageState();
 }
 
-class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
+class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with SingleTickerProviderStateMixin {
   double _startZoom = 1.0;
   bool _isMenuOpen = false;
   String _activeColor = '#FFEF00'; // Canary default
   double _activeThickness = 3.0;
+  bool _isOrbitMode = false;
+  late final AnimationController _cameraController;
+  VoidCallback? _cameraListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _cameraController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    );
+  }
+
+  @override
+  void dispose() {
+    _cameraController.dispose();
+    super.dispose();
+  }
+
+  void _animateCamera(double targetX, double targetY, double targetZoom) {
+    final startX = ref.read(viewportStateProvider).x;
+    final startY = ref.read(viewportStateProvider).y;
+    final startZoom = ref.read(viewportStateProvider).zoom;
+    
+    final curved = CurvedAnimation(parent: _cameraController, curve: Curves.easeOutCubic);
+    
+    if (_cameraListener != null) {
+      _cameraController.removeListener(_cameraListener!);
+    }
+
+    _cameraListener = () {
+      ref.read(viewportStateProvider.notifier).updateViewport(
+        x: startX + (targetX - startX) * curved.value,
+        y: startY + (targetY - startY) * curved.value,
+        zoom: startZoom + (targetZoom - startZoom) * curved.value,
+      );
+    };
+    _cameraController.addListener(_cameraListener!);
+    _cameraController.forward(from: 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,16 +80,16 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
           final currentViewport = ref.read(viewportStateProvider);
           
           if (details.scale == 1.0) {
-            // Panning only
+            // Panning only (No need to divide by zoom since Transform.translate is applied first)
             ref.read(viewportStateProvider.notifier).updateViewport(
-              x: currentViewport.x + details.focalPointDelta.dx / currentViewport.zoom,
-              y: currentViewport.y + details.focalPointDelta.dy / currentViewport.zoom,
+              x: currentViewport.x + details.focalPointDelta.dx,
+              y: currentViewport.y + details.focalPointDelta.dy,
             );
           } else {
             // Zooming and Panning
             ref.read(viewportStateProvider.notifier).updateViewport(
-              x: currentViewport.x + details.focalPointDelta.dx / currentViewport.zoom,
-              y: currentViewport.y + details.focalPointDelta.dy / currentViewport.zoom,
+              x: currentViewport.x + details.focalPointDelta.dx,
+              y: currentViewport.y + details.focalPointDelta.dy,
               zoom: (_startZoom * details.scale).clamp(0.15, 2.0),
             );
           }
@@ -171,7 +212,11 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                       // Radial Menu
                       RadialMenuWidget(
                         isDarkMode: isDarkMode,
-                        onToggleDarkMode: () {},
+                        onToggleDarkMode: () {
+                          final currentTheme = ref.read(themeModeProvider);
+                          ref.read(themeModeProvider.notifier).state = 
+                              currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                        },
                         activeColor: _activeColor,
                         onColorChange: (c) => setState(() => _activeColor = c),
                         activeThickness: _activeThickness,
@@ -197,9 +242,28 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                           ref.read(tilesStateProvider.notifier).clear();
                         },
                         onResetCamera: () {
-                          ref.read(viewportStateProvider.notifier).reset();
+                          _animateCamera(0, 0, 1.0);
+                          if (_isOrbitMode) {
+                            setState(() => _isOrbitMode = false);
+                          }
                         },
-                        isOrbitMode: false,
+                        isOrbitMode: _isOrbitMode,
+                        onDoubleTapMenu: () {
+                          setState(() {
+                            _isOrbitMode = !_isOrbitMode;
+                            if (_isOrbitMode) {
+                              // Bird's eye / microview
+                              final screenSize = MediaQuery.of(context).size;
+                              _animateCamera(
+                                screenSize.width / 2, 
+                                screenSize.height / 2, 
+                                0.2
+                              );
+                            } else {
+                              _animateCamera(0, 0, 1.0);
+                            }
+                          });
+                        },
                         zoom: viewport.zoom,
                         onZoomChange: (z) {
                           ref.read(viewportStateProvider.notifier).updateViewport(zoom: z);
