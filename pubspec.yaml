@@ -47,6 +47,7 @@ dependencies:
   animated_theme_switcher:
     path: ../animated_theme_switcher
   shared_preferences: ^2.5.5
+  perfect_freehand: ^2.5.2+1
 
 dev_dependencies:
   flutter_test:

@@ -41,7 +41,7 @@ final class TilesStateProvider
   }
 }
 
-String _$tilesStateHash() => r'044c30c846f1548496c649c354fe8f0b2f5f578c';
+String _$tilesStateHash() => r'bf14736619597aa64b66198d03e472cf5396fa79';
 
 abstract class _$TilesState extends $Notifier<List<ChromaTile>> {
   List<ChromaTile> build();

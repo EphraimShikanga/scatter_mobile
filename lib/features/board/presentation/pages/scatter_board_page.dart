@@ -7,12 +7,14 @@ import '../../../../core/providers/tiles_provider.dart';
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../widgets/chroma_tile_widget.dart';
+import '../widgets/hit_test_stack.dart';
 import '../widgets/radial_menu_widget.dart';
 import '../widgets/familiar_widget.dart';
 import '../widgets/satellite_flight_renderer_widget.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/models/chroma_tile.dart';
 import '../widgets/dot_grid_painter.dart';
+import '../widgets/focused_writing_board.dart';
 
 class ScatterBoardPage extends ConsumerStatefulWidget {
   const ScatterBoardPage({super.key});
@@ -289,6 +291,54 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage>
         );
   }
 
+  // ── Focus Mode (Double Tap) ───────────────────────────────────────────
+
+  void _onTileDoubleTap(String id) {
+    final tiles = ref.read(tilesStateProvider);
+    final tile = tiles.firstWhere((t) => t.id == id);
+
+    // Close menu when entering focus mode
+    if (_isMenuOpen) {
+      setState(() => _isMenuOpen = false);
+    }
+
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.95, end: 1.0).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+              ),
+              child: FocusedWritingBoard(
+                tile: tile,
+                activeColor: _activeColor,
+                activeThickness: _activeThickness,
+                onColorChange: _onColorChange,
+                onThicknessChange: _onThicknessChange,
+                onSave: ({required title, required content, required strokes}) {
+                  ref.read(tilesStateProvider.notifier).updateTile(
+                    id,
+                    title: title,
+                    content: content,
+                    strokes: strokes,
+                  );
+                  Navigator.of(context).pop();
+                },
+                onCancel: () => Navigator.of(context).pop(),
+              ),
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+        reverseTransitionDuration: const Duration(milliseconds: 200),
+      ),
+    );
+  }
+
   // ── Build ─────────────────────────────────────────────────────────────
 
   @override
@@ -337,7 +387,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage>
                             child: Transform.scale(
                               scale: viewport.zoom,
                               alignment: Alignment.topLeft,
-                              child: Stack(
+                              child: HitTestStack(
                                 clipBehavior: Clip.none,
                                 children: [
                                   for (final tile in tiles)
@@ -347,9 +397,8 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage>
                                       isDarkMode: isDarkMode,
                                       zoomScale: viewport.zoom,
                                       onDrag: _onTileDrag,
-                                      onTap: (id) {
-                                        // Focus mode handled later
-                                      },
+                                      onTap: (id) {},
+                                      onDoubleTap: _onTileDoubleTap,
                                     ),
                                 ],
                               ),

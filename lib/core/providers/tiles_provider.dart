@@ -35,6 +35,30 @@ class TilesState extends _$TilesState {
     }).toList();
   }
 
+  void updateTile(
+    String id, {
+    String? title,
+    String? content,
+    List<Stroke>? strokes,
+    List<int>? struckLineIndices,
+    bool? isSunk,
+    bool? isMicro,
+  }) {
+    state = state.map((tile) {
+      if (tile.id == id) {
+        return tile.copyWith(
+          title: title ?? tile.title,
+          content: content ?? tile.content,
+          strokes: strokes ?? tile.strokes,
+          struckLineIndices: struckLineIndices ?? tile.struckLineIndices,
+          isSunk: isSunk ?? tile.isSunk,
+          isMicro: isMicro ?? tile.isMicro,
+        );
+      }
+      return tile;
+    }).toList();
+  }
+
   void clear() {
     state = [];
   }

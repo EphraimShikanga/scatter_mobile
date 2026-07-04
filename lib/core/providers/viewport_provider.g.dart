@@ -41,7 +41,7 @@ final class ViewportStateProvider
   }
 }
 
-String _$viewportStateHash() => r'0346b01bfcd843545235dabf6193e876b8910790';
+String _$viewportStateHash() => r'6c9fa489d90bbbaea5ad155183002b809ee018ac';
 
 abstract class _$ViewportState extends $Notifier<Viewport> {
   Viewport build();
