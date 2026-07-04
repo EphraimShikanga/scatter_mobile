@@ -33,6 +33,7 @@ class SatelliteFlightRendererWidget extends StatefulWidget {
   final Offset? selectedTileScreenPos;
   final Size? selectedTileSize;
   final String? selectedTileColorHex;
+  final String activeMenuColorHex;
   final double flightProgress;
   final VoidCallback? onImpact;
   final VoidCallback? onComplete;
@@ -45,6 +46,7 @@ class SatelliteFlightRendererWidget extends StatefulWidget {
     required this.isMenuOpen,
     required this.zoomScale,
     required this.screenSize,
+    required this.activeMenuColorHex,
     this.selectedTileScreenPos,
     this.selectedTileSize,
     this.selectedTileColorHex,
@@ -79,8 +81,10 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
     super.dispose();
   }
 
-  Color _parseColor(String? hex) {
-    if (hex == null) return Colors.white;
+  Color _parseColor(String? hex, double time) {
+    if (hex == null || hex == 'rainbow' || hex == '#FFFFFF') {
+      return HSVColor.fromAHSV(1.0, (time * 50) % 360, 0.8, 1.0).toColor();
+    }
     if (hex.startsWith('#')) hex = hex.substring(1);
     if (hex.length == 6) hex = 'FF$hex';
     return Color(int.tryParse(hex, radix: 16) ?? 0xFFFFFFFF);
@@ -133,8 +137,12 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
               basePos = Offset(widget.selectedTileScreenPos!.dx + cardW / 2, widget.selectedTileScreenPos!.dy + cardH / 2);
             }
 
-            final dotColor = _parseColor(widget.selectedTileColorHex ?? widget.flight.colorHex);
-            final flightColor = _parseColor(widget.flight.colorHex);
+            final currentHex = widget.flight.phase == 'none' 
+                ? (widget.selectedTileColorHex ?? widget.activeMenuColorHex)
+                : widget.flight.colorHex;
+
+            final dotColor = _parseColor(currentHex, time);
+            final flightColor = _parseColor(currentHex, time);
 
             return CustomPaint(
               painter: _SatellitePainter(

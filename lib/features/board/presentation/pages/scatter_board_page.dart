@@ -21,7 +21,7 @@ class ScatterBoardPage extends ConsumerStatefulWidget {
 class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with TickerProviderStateMixin {
   double _startZoom = 1.0;
   bool _isMenuOpen = false;
-  String _activeColor = '#FFEF00'; // Canary default
+  String _activeColor = 'rainbow'; // Rainbow default
   double _activeThickness = 3.0;
   bool _isOrbitMode = false;
   late final AnimationController _cameraController;
@@ -30,6 +30,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
   SatelliteFlightState _flightState = SatelliteFlightState.idle;
 
   bool _isRevealingTheme = false;
+  bool _isHidingThemeTransition = false;
   Offset _themeRevealCenter = Offset.zero;
 
   @override
@@ -197,16 +198,30 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                       final currentTheme = ref.read(themeModeProvider);
                       ref.read(themeModeProvider.notifier).state = 
                           currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                      // Wait a frame for the theme rebuild, then hide the transition
-                      Future.delayed(Duration.zero, () {
-                        if (mounted) setState(() => _isRevealingTheme = false);
+                      
+                      // Fade out the transition layer seamlessly
+                      Future.delayed(const Duration(milliseconds: 50), () {
+                        if (mounted) setState(() => _isHidingThemeTransition = true);
+                      });
+                      
+                      Future.delayed(const Duration(milliseconds: 350), () {
+                        if (mounted) {
+                          setState(() {
+                            _isRevealingTheme = false;
+                            _isHidingThemeTransition = false;
+                          });
+                        }
                       });
                     },
                     builder: (context, radius, child) {
                       final newBgColor = isDarkMode ? Colors.white : const Color(0xFF171717); // Target theme color
-                      return ClipPath(
-                        clipper: _CircleClipper(_themeRevealCenter, radius),
-                        child: Container(color: newBgColor),
+                      return AnimatedOpacity(
+                        opacity: _isHidingThemeTransition ? 0.0 : 1.0,
+                        duration: const Duration(milliseconds: 300),
+                        child: ClipPath(
+                          clipper: _CircleClipper(_themeRevealCenter, radius),
+                          child: Container(color: newBgColor),
+                        ),
                       );
                     },
                   ),
@@ -308,7 +323,13 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                           final screenSize = MediaQuery.of(context).size;
                           final spawnTarget = Offset(screenSize.width / 2, screenSize.height / 2);
                           
-                          _triggerSatelliteFlight('spawn', spawnTarget, colorHex, () async {
+                          String spawnColor = colorHex;
+                          if (colorHex == 'rainbow') {
+                            final random = math.Random();
+                            spawnColor = '#${(random.nextDouble() * 0xFFFFFF).toInt().toRadixString(16).padLeft(6, '0')}';
+                          }
+                          
+                          _triggerSatelliteFlight('spawn', spawnTarget, spawnColor, () async {
                             final newTile = ChromaTile(
                               id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
                               x: (screenSize.width / 2 - viewport.x) / viewport.zoom - 140,
@@ -316,7 +337,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                               width: 280,
                               height: 220,
                               colorName: 'custom',
-                              colorHex: colorHex,
+                              colorHex: spawnColor,
                               title: 'New Note',
                               content: '',
                               strokes: [],
@@ -376,6 +397,11 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                       AnimatedBuilder(
                         animation: _flightAnimController,
                         builder: (context, child) {
+                          final curvedProgress = CurvedAnimation(
+                            parent: _flightAnimController,
+                            curve: Curves.easeInOutCubic,
+                          ).value;
+
                           return SatelliteFlightRendererWidget(
                             flight: _flightState,
                             familiarPos: animatedFamiliarPos,
@@ -384,7 +410,8 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                             zoomScale: viewport.zoom,
                             screenSize: MediaQuery.of(context).size,
                             selectedTileScreenPos: null, // to be updated when focus mode works
-                            flightProgress: _flightAnimController.value,
+                            activeMenuColorHex: _activeColor,
+                            flightProgress: curvedProgress,
                           );
                         }
                       ),

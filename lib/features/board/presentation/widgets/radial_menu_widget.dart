@@ -176,6 +176,8 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                             _buildColorBtn('coral', colorCoral),
                             const SizedBox(width: 6),
                             _buildColorBtn('iceBlue', colorIceBlue),
+                            const SizedBox(width: 6),
+                            _buildColorBtn('rainbow', 'rainbow'),
 
                             const SizedBox(width: 16),
 
@@ -273,7 +275,12 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
         width: 32,
         height: 32,
         decoration: BoxDecoration(
-          color: _parseColor(hex),
+          color: hex == 'rainbow' ? null : _parseColor(hex),
+          gradient: hex == 'rainbow' 
+              ? const SweepGradient(
+                  colors: [Colors.red, Colors.yellow, Colors.green, Colors.blue, Colors.purple, Colors.red],
+                )
+              : null,
           shape: BoxShape.circle,
           border: Border.all(
             color: widget.isDarkMode
