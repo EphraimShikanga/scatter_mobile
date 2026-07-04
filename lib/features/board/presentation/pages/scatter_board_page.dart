@@ -392,8 +392,9 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
             ],
           ),
         ),
-      );
-    });
+      ); // end Scaffold
+      },
+    ); // end ThemeSwitcher.withTheme
   }
 }
 
