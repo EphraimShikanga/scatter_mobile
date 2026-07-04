@@ -105,111 +105,122 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
                 ),
               ),
               
-              if (widget.isMenuOpen)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(
-                      height: 48,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: borderColor),
-                        boxShadow: [
-                          BoxShadow(
-                            color: widget.isDarkMode 
-                                ? Colors.black.withValues(alpha: 0.4) 
-                                : const Color(0xFFE5E5E5).withValues(alpha: 0.5),
-                            blurRadius: 40,
-                            offset: const Offset(0, 12),
-                          )
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Left: Quick Spawn Color Notes
-                          _buildColorBtn('canary', colorCanary),
-                          const SizedBox(width: 6),
-                          _buildColorBtn('mint', colorMint),
-                          const SizedBox(width: 6),
-                          _buildColorBtn('coral', colorCoral),
-                          const SizedBox(width: 6),
-                          _buildColorBtn('iceBlue', colorIceBlue),
-                          
-                          const SizedBox(width: 16),
-                          
-                          // Minimal Divider
-                          Container(
-                            width: 1,
-                            height: 20,
-                            color: widget.isDarkMode 
-                                ? const Color(0xFF262626) 
-                                : const Color(0xFFE5E5E5),
-                          ),
-                          
-                          const SizedBox(width: 4),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutBack,
+                alignment: Alignment.centerLeft,
+                clipBehavior: Clip.hardEdge,
+                child: widget.isMenuOpen
+                    ? AnimatedOpacity(
+                        duration: const Duration(milliseconds: 250),
+                        opacity: widget.isMenuOpen ? 1.0 : 0.0,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(24),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                            child: Container(
+                              height: 48,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: borderColor),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: widget.isDarkMode 
+                                        ? Colors.black.withValues(alpha: 0.4) 
+                                        : const Color(0xFFE5E5E5).withValues(alpha: 0.5),
+                                    blurRadius: 40,
+                                    offset: const Offset(0, 12),
+                                  )
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Left: Quick Spawn Color Notes
+                                  _buildColorBtn('canary', colorCanary),
+                                  const SizedBox(width: 6),
+                                  _buildColorBtn('mint', colorMint),
+                                  const SizedBox(width: 6),
+                                  _buildColorBtn('coral', colorCoral),
+                                  const SizedBox(width: 6),
+                                  _buildColorBtn('iceBlue', colorIceBlue),
+                                  
+                                  const SizedBox(width: 16),
+                                  
+                                  // Minimal Divider
+                                  Container(
+                                    width: 1,
+                                    height: 20,
+                                    color: widget.isDarkMode 
+                                        ? const Color(0xFF262626) 
+                                        : const Color(0xFFE5E5E5),
+                                  ),
+                                  
+                                  const SizedBox(width: 4),
 
-                          // Right: Quick View & Global Settings
-                          _buildIconTextBtn(
-                            '${(widget.zoom * 100).round()}%',
-                            _showZoomSlider,
-                            () {
-                              setState(() {
-                                _showZoomSlider = !_showZoomSlider;
-                                if (_showZoomSlider) _showHelp = false;
-                              });
-                            },
-                          ),
-                          
-                          _buildIconBtn(
-                            LucideIcons.layoutGrid, 
-                            widget.isOrbitMode, 
-                            () {
-                              if (widget.onDoubleTapMenu != null) {
-                                widget.onDoubleTapMenu!();
-                              }
-                            }
-                          ),
+                                  // Right: Quick View & Global Settings
+                                  _buildIconTextBtn(
+                                    '${(widget.zoom * 100).round()}%',
+                                    _showZoomSlider,
+                                    () {
+                                      setState(() {
+                                        _showZoomSlider = !_showZoomSlider;
+                                        if (_showZoomSlider) _showHelp = false;
+                                      });
+                                    },
+                                  ),
+                                  
+                                  _buildIconBtn(
+                                    LucideIcons.layoutGrid, 
+                                    widget.isOrbitMode, 
+                                    () {
+                                      if (widget.onDoubleTapMenu != null) {
+                                        widget.onDoubleTapMenu!();
+                                      }
+                                    }
+                                  ),
 
-                          _buildIconBtn(
-                            widget.isDarkMode ? LucideIcons.sun : LucideIcons.moon, 
-                            false, 
-                            widget.onToggleDarkMode,
-                            iconOverrideColor: widget.isDarkMode ? Colors.amber : null,
+                                  _buildIconBtn(
+                                    widget.isDarkMode ? LucideIcons.sun : LucideIcons.moon, 
+                                    false, 
+                                    widget.onToggleDarkMode,
+                                    iconOverrideColor: widget.isDarkMode ? Colors.amber : null,
+                                  ),
+                                  
+                                  _buildIconBtn(
+                                    LucideIcons.compass, 
+                                    false, 
+                                    widget.onResetCamera
+                                  ),
+                                  
+                                  _buildIconBtn(
+                                    LucideIcons.helpCircle, 
+                                    _showHelp, 
+                                    () {
+                                      setState(() {
+                                        _showHelp = !_showHelp;
+                                        if (_showHelp) _showZoomSlider = false;
+                                      });
+                                    }
+                                  ),
+                                  
+                                  _buildIconBtn(
+                                    LucideIcons.trash2, 
+                                    false, 
+                                    widget.onClearCanvas,
+                                    hoverColor: Colors.redAccent.withValues(alpha: 0.1),
+                                    iconHoverColor: Colors.redAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          
-                          _buildIconBtn(
-                            LucideIcons.compass, 
-                            false, 
-                            widget.onResetCamera
-                          ),
-                          
-                          _buildIconBtn(
-                            LucideIcons.helpCircle, 
-                            _showHelp, 
-                            () {
-                              setState(() {
-                                _showHelp = !_showHelp;
-                                if (_showHelp) _showZoomSlider = false;
-                              });
-                            }
-                          ),
-                          
-                          _buildIconBtn(
-                            LucideIcons.trash2, 
-                            false, 
-                            widget.onClearCanvas,
-                            hoverColor: Colors.redAccent.withValues(alpha: 0.1),
-                            iconHoverColor: Colors.redAccent,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
             ],
           )
         ],

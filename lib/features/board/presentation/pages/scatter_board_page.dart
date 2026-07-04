@@ -154,33 +154,10 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                 ),
               ),
 
-              // Familiar Orb
-              FamiliarWidget(
-                state: FamiliarState.idle,
-                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
-                isDarkMode: isDarkMode,
-                isSatelliteFlying: false,
-                onOrbClick: () => setState(() => _isMenuOpen = !_isMenuOpen),
-              ),
-
-              // Satellite Flight Renderer
-              SatelliteFlightRendererWidget(
-                flight: SatelliteFlightState.idle,
-                familiarPos: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
-                isDarkMode: isDarkMode,
-                isMenuOpen: _isMenuOpen,
-                zoomScale: viewport.zoom,
-                screenSize: MediaQuery.of(context).size,
-                selectedTileScreenPos: null, // to be updated when focus mode works
-              ),
-              
               // Radial Menu
               RadialMenuWidget(
                 isDarkMode: isDarkMode,
-                onToggleDarkMode: () {
-                  // Theme toggling will need AppTheme setup at the app level.
-                  // For now we don't have a direct theme toggle provider yet.
-                },
+                onToggleDarkMode: () {},
                 activeColor: _activeColor,
                 onColorChange: (c) => setState(() => _activeColor = c),
                 activeThickness: _activeThickness,
@@ -216,6 +193,26 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                 isMenuOpen: _isMenuOpen,
                 onToggleMenu: () => setState(() => _isMenuOpen = !_isMenuOpen),
                 familiarX: MediaQuery.of(context).size.width / 2,
+              ),
+
+              // Familiar Orb
+              FamiliarWidget(
+                state: FamiliarState.idle,
+                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
+                isDarkMode: isDarkMode,
+                isSatelliteFlying: false,
+                onOrbClick: () => setState(() => _isMenuOpen = !_isMenuOpen),
+              ),
+
+              // Satellite Flight Renderer
+              SatelliteFlightRendererWidget(
+                flight: SatelliteFlightState.idle,
+                familiarPos: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
+                isDarkMode: isDarkMode,
+                isMenuOpen: _isMenuOpen,
+                zoomScale: viewport.zoom,
+                screenSize: MediaQuery.of(context).size,
+                selectedTileScreenPos: null, // to be updated when focus mode works
               ),
             ],
           ),
