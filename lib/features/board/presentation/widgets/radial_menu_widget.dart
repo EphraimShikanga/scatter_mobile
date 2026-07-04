@@ -1,5 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../../../core/constants/initial_tiles.dart';
 
 class RadialMenuWidget extends StatefulWidget {
   final bool isDarkMode;
@@ -47,8 +49,23 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
   bool _showHelp = false;
   bool _showZoomSlider = false;
 
+  Color _parseColor(String hex) {
+    if (hex.startsWith('#')) hex = hex.substring(1);
+    if (hex.length == 6) hex = 'FF$hex';
+    return Color(int.tryParse(hex, radix: 16) ?? 0xFFFFFFFF);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Colors matching React classes
+    final bgColor = widget.isDarkMode 
+        ? const Color(0xE6171717) // bg-neutral-900/90
+        : const Color(0xE6FFFFFF); // bg-white/90
+        
+    final borderColor = widget.isDarkMode 
+        ? const Color(0xFF262626) // border-neutral-800
+        : const Color(0xFFE5E5E5); // border-neutral-200
+
     return Positioned(
       bottom: 32,
       left: widget.familiarX - 24, // simplified positioning
@@ -58,14 +75,12 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           if (_showHelp || _showZoomSlider)
             Container(
               width: 320,
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 12, left: 16),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: widget.isDarkMode ? const Color(0xF2171717) : const Color(0xF2FFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                border: Border.all(color: borderColor),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.15),
@@ -78,62 +93,198 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
             ),
           
           // Main Menu Row (Capsule)
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(LucideIcons.plus),
-                  onPressed: () => widget.onAddTile(null),
-                  color: Theme.of(context).colorScheme.onSurface,
+          Row(
+            children: [
+              // Familiar spacer trigger
+              GestureDetector(
+                onTap: widget.onToggleMenu,
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  color: Colors.transparent,
                 ),
-                IconButton(
-                  icon: Icon(widget.isDarkMode ? LucideIcons.sun : LucideIcons.moon),
-                  onPressed: widget.onToggleDarkMode,
-                  color: Theme.of(context).colorScheme.onSurface,
+              ),
+              
+              if (widget.isMenuOpen)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: borderColor),
+                        boxShadow: [
+                          BoxShadow(
+                            color: widget.isDarkMode 
+                                ? Colors.black.withValues(alpha: 0.4) 
+                                : const Color(0xFFE5E5E5).withValues(alpha: 0.5),
+                            blurRadius: 40,
+                            offset: const Offset(0, 12),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Left: Quick Spawn Color Notes
+                          _buildColorBtn('canary', colorCanary),
+                          const SizedBox(width: 6),
+                          _buildColorBtn('mint', colorMint),
+                          const SizedBox(width: 6),
+                          _buildColorBtn('coral', colorCoral),
+                          const SizedBox(width: 6),
+                          _buildColorBtn('iceBlue', colorIceBlue),
+                          
+                          const SizedBox(width: 16),
+                          
+                          // Minimal Divider
+                          Container(
+                            width: 1,
+                            height: 20,
+                            color: widget.isDarkMode 
+                                ? const Color(0xFF262626) 
+                                : const Color(0xFFE5E5E5),
+                          ),
+                          
+                          const SizedBox(width: 4),
+
+                          // Right: Quick View & Global Settings
+                          _buildIconTextBtn(
+                            '${(widget.zoom * 100).round()}%',
+                            _showZoomSlider,
+                            () {
+                              setState(() {
+                                _showZoomSlider = !_showZoomSlider;
+                                if (_showZoomSlider) _showHelp = false;
+                              });
+                            },
+                          ),
+                          
+                          _buildIconBtn(
+                            LucideIcons.layoutGrid, 
+                            widget.isOrbitMode, 
+                            () {
+                              if (widget.onDoubleTapMenu != null) {
+                                widget.onDoubleTapMenu!();
+                              }
+                            }
+                          ),
+
+                          _buildIconBtn(
+                            widget.isDarkMode ? LucideIcons.sun : LucideIcons.moon, 
+                            false, 
+                            widget.onToggleDarkMode,
+                            iconOverrideColor: widget.isDarkMode ? Colors.amber : null,
+                          ),
+                          
+                          _buildIconBtn(
+                            LucideIcons.compass, 
+                            false, 
+                            widget.onResetCamera
+                          ),
+                          
+                          _buildIconBtn(
+                            LucideIcons.helpCircle, 
+                            _showHelp, 
+                            () {
+                              setState(() {
+                                _showHelp = !_showHelp;
+                                if (_showHelp) _showZoomSlider = false;
+                              });
+                            }
+                          ),
+                          
+                          _buildIconBtn(
+                            LucideIcons.trash2, 
+                            false, 
+                            widget.onClearCanvas,
+                            hoverColor: Colors.redAccent.withValues(alpha: 0.1),
+                            iconHoverColor: Colors.redAccent,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                IconButton(
-                  icon: const Icon(LucideIcons.zoomIn),
-                  onPressed: () {
-                    setState(() {
-                      _showZoomSlider = !_showZoomSlider;
-                      if (_showZoomSlider) _showHelp = false;
-                    });
-                  },
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                IconButton(
-                  icon: const Icon(LucideIcons.helpCircle),
-                  onPressed: () {
-                    setState(() {
-                      _showHelp = !_showHelp;
-                      if (_showHelp) _showZoomSlider = false;
-                    });
-                  },
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-                IconButton(
-                  icon: const Icon(LucideIcons.trash2),
-                  onPressed: widget.onClearCanvas,
-                  color: Colors.redAccent,
-                ),
-              ],
-            ),
+            ],
           )
         ],
+      ),
+    );
+  }
+
+  Widget _buildColorBtn(String name, String hex) {
+    return GestureDetector(
+      onTap: () => widget.onAddTile(name),
+      child: Container(
+        width: 28, // w-7
+        height: 28, // h-7
+        decoration: BoxDecoration(
+          color: _parseColor(hex),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: widget.isDarkMode 
+                ? Colors.white.withValues(alpha: 0.15) 
+                : Colors.black.withValues(alpha: 0.12)
+          ),
+        ),
+        child: const Center(
+          child: Icon(LucideIcons.plus, size: 11, color: Color(0xFF171717)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconTextBtn(String text, bool isActive, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isActive ? FontWeight.w900 : FontWeight.bold,
+            letterSpacing: 1.0,
+            color: isActive 
+                ? Colors.amber.shade600 
+                : (widget.isDarkMode ? const Color(0xFFA3A3A3) : const Color(0xFF737373)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIconBtn(
+    IconData icon, 
+    bool isActive, 
+    VoidCallback onTap, 
+    {Color? hoverColor, Color? iconHoverColor, Color? iconOverrideColor}
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.amber.withValues(alpha: 0.15) : Colors.transparent,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          icon,
+          size: 13,
+          color: iconOverrideColor ?? (isActive 
+              ? Colors.amber.shade600 
+              : (widget.isDarkMode ? const Color(0xFFA3A3A3) : const Color(0xFF737373))),
+        ),
       ),
     );
   }
@@ -147,19 +298,20 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           children: [
             Text(
               'VIEWPORT ZOOM SCALE',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.0,
+                color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.6),
+              ),
             ),
             Text(
               '${(widget.zoom * 100).round()}%',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.orange,
-                  ),
+              style: const TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                color: Colors.orange,
+              ),
             ),
           ],
         ),
@@ -169,7 +321,7 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
           min: 0.15,
           max: 2.0,
           onChanged: widget.onZoomChange,
-          activeColor: Theme.of(context).colorScheme.onSurface,
+          activeColor: widget.isDarkMode ? Colors.white : Colors.black,
         ),
       ],
     );
@@ -181,21 +333,25 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
       children: [
         Text(
           'CANVAS INTERACTION MODEL',
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontSize: 9,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: TextStyle(
+            fontSize: 9,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2.0,
+            color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.4) : Colors.black.withValues(alpha: 0.4),
+          ),
         ),
         const SizedBox(height: 8),
-        _buildHelpRow('Spawn Chroma Tile', 'Double-tap workspace'),
-        _buildHelpRow('Sketch and Write', 'Double-tap note body'),
-        _buildHelpRow('Dynamic Grouping', 'Drag note close to another'),
+        _buildHelpRow('Spawn Chroma Tile', 'Double-tap workspace background', false),
+        _buildHelpRow('Sketch and Write', 'Double-tap note body', false),
+        _buildHelpRow('Dynamic Grouping', 'Drag note close to another', false),
+        _buildHelpRow('Unlink Group', 'Tap Unlink button on header', false),
+        _buildHelpRow('Sink Note to Canvas', 'Hold 400ms or click Minimize icon', true),
+        _buildHelpRow('Restore Sunken Note', 'Click the floating micro-card', false),
       ],
     );
   }
 
-  Widget _buildHelpRow(String label, String value) {
+  Widget _buildHelpRow(String label, String value, bool highlightValue) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -203,14 +359,21 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
         children: [
           Text(
             label, 
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontSize: 10, 
-                  fontWeight: FontWeight.w500
-                )
+            style: TextStyle(
+              fontSize: 10, 
+              fontWeight: FontWeight.w500,
+              color: widget.isDarkMode ? Colors.white.withValues(alpha: 0.6) : Colors.black.withValues(alpha: 0.6),
+            )
           ),
           Text(
             value, 
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 9)
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: highlightValue ? FontWeight.bold : FontWeight.normal,
+              color: highlightValue 
+                  ? Colors.amber 
+                  : (widget.isDarkMode ? Colors.white.withValues(alpha: 0.95) : Colors.black.withValues(alpha: 0.95)),
+            )
           ),
         ],
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../../../../core/theme/app_colors.dart';
 
 enum FamiliarState {
   idle,
@@ -43,6 +42,14 @@ class FamiliarWidget extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
+              // 1. Drag Bezier String
+              if (state == FamiliarState.returningFetch && bezierTargetPos != null)
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _BezierStringPainter(bezierTargetPos: bezierTargetPos!, startPos: position),
+                  ),
+                ),
+
               // Glow halo
               Positioned(
                 child: Container(
@@ -50,17 +57,16 @@ class FamiliarWidget extends StatelessWidget {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.familiarGlow.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        spreadRadius: 10,
-                      ),
-                    ],
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.7],
+                    ),
                   ),
                 ),
-              ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-               .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 2.seconds),
+              ),
 
               // Spectral Orb Body
               Container(
@@ -68,31 +74,30 @@ class FamiliarWidget extends StatelessWidget {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const RadialGradient(
+                  gradient: const LinearGradient(
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
                     colors: [
-                      Colors.yellowAccent,
-                      AppColors.familiarAccent,
-                      AppColors.familiarGlow,
+                      Color(0xFFF59E0B), // amber-500
+                      Color(0xFFFBBF24), // amber-400
+                      Color(0xFFFDE047), // yellow-300
                     ],
-                    stops: [0.2, 0.6, 1.0],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.familiarGlow.withValues(alpha: 0.7),
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.7),
                       blurRadius: 15,
-                      spreadRadius: 5,
                     ),
                   ],
                 ),
-              ).animate(onPlay: (controller) => controller.repeat(reverse: true))
-               .scale(begin: const Offset(0.95, 0.95), end: const Offset(1.05, 1.05), duration: 1.5.seconds),
+              ),
               
               if (state == FamiliarState.consuming)
                 ...List.generate(6, (index) {
                   return const Positioned(
                     child: CircleAvatar(
-                      radius: 2,
-                      backgroundColor: AppColors.familiarAccent,
+                      radius: 3, // w-1.5 h-1.5
+                      backgroundColor: Color(0xFFFBBF24), // amber-400
                     ),
                   ).animate(onPlay: (controller) => controller.repeat())
                    .fadeIn(duration: 400.ms)
@@ -100,7 +105,6 @@ class FamiliarWidget extends StatelessWidget {
                    .move(
                      duration: 800.ms,
                      begin: Offset.zero,
-                     // Fake random directions for consuming
                      end: Offset((index % 2 == 0 ? 30 : -30), (index % 3 == 0 ? 30 : -30)),
                    )
                    .fadeOut();
@@ -111,4 +115,35 @@ class FamiliarWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BezierStringPainter extends CustomPainter {
+  final Offset bezierTargetPos;
+  final Offset startPos;
+
+  _BezierStringPainter({required this.bezierTargetPos, required this.startPos});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // simplified version of the drag string for fetch
+    final paint = Paint()
+      ..color = const Color(0xFF10B981) // roughly the middle of the gradient
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5;
+
+    final path = Path();
+    path.moveTo(size.width / 2, size.height / 2);
+    // Draw string to target
+    path.quadraticBezierTo(
+      (size.width / 2 + (bezierTargetPos.dx - startPos.dx)) / 2,
+      (size.height / 2 + (bezierTargetPos.dy - startPos.dy)) / 2 - 40,
+      size.width / 2 + (bezierTargetPos.dx - startPos.dx),
+      size.height / 2 + (bezierTargetPos.dy - startPos.dy),
+    );
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
