@@ -5,6 +5,7 @@ import '../../../../core/providers/viewport_provider.dart';
 import '../../../../core/providers/tiles_provider.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../widgets/chroma_tile_widget.dart';
 import '../widgets/radial_menu_widget.dart';
 import '../widgets/familiar_widget.dart';
@@ -393,31 +394,6 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
         ),
       );
     });
-  }
-
-  void _animateCamera(double targetX, double targetY, double targetZoom) {
-    final startX = ref.read(viewportStateProvider).x;
-    final startY = ref.read(viewportStateProvider).y;
-    final startZoom = ref.read(viewportStateProvider).zoom;
-    
-    final curved = CurvedAnimation(parent: _cameraController, curve: Curves.easeOutCubic);
-    
-    if (_cameraListener != null) {
-      _cameraController.removeListener(_cameraListener!);
-    }
-
-    _cameraListener = () {
-      if (mounted) {
-        ref.read(viewportStateProvider.notifier).updateViewport(
-          x: startX + (targetX - startX) * curved.value,
-          y: startY + (targetY - startY) * curved.value,
-          zoom: startZoom + (targetZoom - startZoom) * curved.value,
-        );
-      }
-    };
-    
-    _cameraController.addListener(_cameraListener!);
-    _cameraController.forward(from: 0);
   }
 }
 
