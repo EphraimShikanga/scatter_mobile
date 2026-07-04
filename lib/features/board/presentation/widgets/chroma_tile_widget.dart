@@ -58,107 +58,151 @@ class _ChromaTileWidgetState extends ConsumerState<ChromaTileWidget> {
     }
   }
 
+  double getRotationAngle(String id) {
+    int hash = 0;
+    for (int i = 0; i < id.length; i++) {
+      hash = id.codeUnitAt(i) + ((hash << 5) - hash);
+    }
+    double angleDeg = (hash % 5) / 3.0; 
+    return angleDeg * (3.1415926535897932 / 180.0); // Convert to radians
+  }
+
   @override
   Widget build(BuildContext context) {
     final bgColor = _parseColor(widget.tile.colorHex);
     final borderColor = widget.isDarkMode 
-        ? AppColors.borderDark 
-        : AppColors.borderLight;
+        ? Colors.white.withValues(alpha: 0.08) 
+        : Colors.black.withValues(alpha: 0.08);
 
     return Positioned(
       left: widget.tile.x,
       top: widget.tile.y,
       width: widget.tile.width,
       height: widget.tile.height,
-      child: Listener(
-        onPointerDown: _handlePointerDown,
-        onPointerMove: _handlePointerMove,
-        onPointerUp: _handlePointerUp,
-        child: GestureDetector(
-          onPanUpdate: (details) {
-            // Forward drag events back up
-            widget.onDrag(widget.tile.id, details.delta.dx, details.delta.dy);
-          },
-          onTap: () => widget.onTap(widget.tile.id),
-          child: Container(
-            decoration: BoxDecoration(
-              color: bgColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: bgColor.withValues(alpha: 0.2),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                )
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Stack(
-                children: [
-                  // Header
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 36,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: AppColors.tileHeaderShadow,
+      child: Transform.rotate(
+        angle: getRotationAngle(widget.tile.id),
+        child: Listener(
+          onPointerDown: _handlePointerDown,
+          onPointerMove: _handlePointerMove,
+          onPointerUp: _handlePointerUp,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              widget.onDrag(widget.tile.id, details.delta.dx, details.delta.dy);
+            },
+            onTap: () => widget.onTap(widget.tile.id),
+            child: Container(
+              decoration: BoxDecoration(
+                color: bgColor,
+                borderRadius: BorderRadius.circular(16), // rounded-2xl
+                border: Border.all(color: borderColor, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06), // shadow-[0_4px_16px_rgba(0,0,0,0.06)]
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  )
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(
+                  children: [
+                    // Header (Integrated)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.015), // bg-black/[0.015]
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), // px-3 py-2
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Icon(LucideIcons.gripVertical, size: 13, color: AppColors.tileIcon), // size 13
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      widget.tile.title.toUpperCase(),
+                                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                            fontSize: 11, // text-[11px]
+                                            fontWeight: FontWeight.bold, // font-bold
+                                            letterSpacing: 0.5, // tracking-wider
+                                            color: AppColors.tileText.withValues(alpha: 0.6), // text-neutral-900/60
+                                          ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!widget.tile.isSunk)
+                              Opacity(
+                                opacity: 0.3, // opacity-30
+                                child: Row(
+                                  children: [
+                                    Icon(LucideIcons.minimize2, size: 11, color: AppColors.tileText),
+                                    const SizedBox(width: 6),
+                                    Icon(LucideIcons.anchor, size: 11, color: AppColors.tileText),
+                                    const SizedBox(width: 6),
+                                    Icon(LucideIcons.maximize2, size: 11, color: AppColors.tileText),
+                                    const SizedBox(width: 6),
+                                    Icon(LucideIcons.trash2, size: 11, color: AppColors.tileText),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // Body text
+                    Positioned(
+                      top: 36, // Below header
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 16), // p-4 pt-1
+                        child: Text(
+                          widget.tile.content,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontSize: 12, // text-xs
+                                height: 1.6, // leading-relaxed
+                                color: AppColors.tileText.withValues(alpha: 0.8), // text-neutral-900/80
+                              ),
+                        ),
+                      ),
+                    ),
+
+                    // Bottom subtle bar - cluster indicator if clustered
+                    if (widget.tile.clusterId != null)
+                      Positioned(
+                        bottom: 6,
+                        right: 10,
+                        child: Text(
+                          'LINKED',
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontSize: 8, 
+                            fontWeight: FontWeight.bold, 
+                            color: AppColors.tileText.withValues(alpha: 0.35), 
+                            letterSpacing: 0.5
                           ),
                         ),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.tile.title,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.tileText,
-                                  ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const Icon(LucideIcons.gripVertical, size: 16, color: AppColors.tileIcon),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  // Body text
-                  Positioned(
-                    top: 36,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        widget.tile.content,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontSize: 14,
-                              color: AppColors.tileText,
-                            ),
+                    // Strokes overlay
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _StrokesPainter(
+                          strokes: widget.tile.strokes,
+                        ),
                       ),
                     ),
-                  ),
-
-                  // Strokes overlay
-                  Positioned.fill(
-                    child: CustomPaint(
-                      painter: _StrokesPainter(
-                        strokes: widget.tile.strokes,
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
