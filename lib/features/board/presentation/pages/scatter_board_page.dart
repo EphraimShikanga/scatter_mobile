@@ -52,7 +52,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
     super.dispose();
   }
 
-  void _triggerSatelliteFlight(String type, Offset target, String colorHex, VoidCallback onImpact) {
+  void _triggerSatelliteFlight(String type, Offset target, String colorHex, Future<void> Function() onImpact) {
     setState(() {
       _flightState = SatelliteFlightState(
         phase: 'outgoing',
@@ -62,8 +62,9 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
       );
     });
     
-    _flightAnimController.forward(from: 0.0).then((_) {
-      onImpact();
+    _flightAnimController.forward(from: 0.0).then((_) async {
+      await onImpact();
+      if (!mounted) return;
       setState(() {
          _flightState = SatelliteFlightState(
            phase: 'returning',
@@ -73,6 +74,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
          );
       });
       _flightAnimController.reverse(from: 1.0).then((_) {
+        if (!mounted) return;
         setState(() {
           _flightState = SatelliteFlightState(
             phase: 'none',
@@ -195,7 +197,10 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                       final currentTheme = ref.read(themeModeProvider);
                       ref.read(themeModeProvider.notifier).state = 
                           currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                      setState(() => _isRevealingTheme = false);
+                      // Wait a frame for the theme rebuild, then hide the transition
+                      Future.delayed(Duration.zero, () {
+                        if (mounted) setState(() => _isRevealingTheme = false);
+                      });
                     },
                     builder: (context, radius, child) {
                       final newBgColor = isDarkMode ? Colors.white : const Color(0xFF171717); // Target theme color
@@ -286,11 +291,13 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                             random.nextDouble() * screenSize.height,
                           );
 
-                          _triggerSatelliteFlight('theme', themeTarget, _activeColor, () {
+                          _triggerSatelliteFlight('theme', themeTarget, _activeColor, () async {
                             setState(() {
                               _isRevealingTheme = true;
                               _themeRevealCenter = themeTarget;
                             });
+                            // Wait for the reveal animation (400ms) to complete before returning
+                            await Future.delayed(const Duration(milliseconds: 400));
                           });
                         },
                         activeColor: _activeColor,
@@ -301,11 +308,11 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                           final screenSize = MediaQuery.of(context).size;
                           final spawnTarget = Offset(screenSize.width / 2, screenSize.height / 2);
                           
-                          _triggerSatelliteFlight('spawn', spawnTarget, colorHex, () {
+                          _triggerSatelliteFlight('spawn', spawnTarget, colorHex, () async {
                             final newTile = ChromaTile(
                               id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
-                              x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
-                              y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
+                              x: (screenSize.width / 2 - viewport.x) / viewport.zoom - 140,
+                              y: (screenSize.height / 2 - viewport.y) / viewport.zoom - 110,
                               width: 280,
                               height: 220,
                               colorName: 'custom',
@@ -323,7 +330,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                           ref.read(tilesStateProvider.notifier).clear();
                         },
                         onResetCamera: () {
-                          _triggerSatelliteFlight('recenter', animatedFamiliarPos, _activeColor, () {
+                          _triggerSatelliteFlight('recenter', animatedFamiliarPos, _activeColor, () async {
                             _animateCamera(0, 0, 1.0);
                             if (_isOrbitMode) {
                               setState(() => _isOrbitMode = false);
