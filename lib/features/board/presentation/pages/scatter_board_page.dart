@@ -17,7 +17,7 @@ class ScatterBoardPage extends ConsumerStatefulWidget {
   ConsumerState<ScatterBoardPage> createState() => _ScatterBoardPageState();
 }
 
-class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with SingleTickerProviderStateMixin {
+class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with TickerProviderStateMixin {
   double _startZoom = 1.0;
   bool _isMenuOpen = false;
   String _activeColor = '#FFEF00'; // Canary default
