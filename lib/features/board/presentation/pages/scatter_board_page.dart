@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/providers/viewport_provider.dart';
 import '../../../../core/providers/tiles_provider.dart';
+import '../../../../core/theme/app_theme.dart';
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 import '../widgets/chroma_tile_widget.dart';
 import '../widgets/radial_menu_widget.dart';
 import '../widgets/familiar_widget.dart';
@@ -28,10 +29,6 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
   late final AnimationController _flightAnimController;
   VoidCallback? _cameraListener;
   SatelliteFlightState _flightState = SatelliteFlightState.idle;
-
-  bool _isRevealingTheme = false;
-  bool _isHidingThemeTransition = false;
-  Offset _themeRevealCenter = Offset.zero;
 
   @override
   void initState() {
@@ -117,9 +114,11 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
     final activeTilesCount = tiles.where((t) => !t.isArchived).length;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: GestureDetector(
+    return ThemeSwitcher.withTheme(
+      builder: (context, switcher, theme) {
+        return Scaffold(
+          backgroundColor: theme.scaffoldBackgroundColor,
+          body: GestureDetector(
         onScaleStart: (details) {
           _startZoom = ref.read(viewportStateProvider).zoom;
         },
@@ -187,45 +186,6 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                   ),
                 ),
               ),
-
-              // Expanding Circular Theme Reveal
-              if (_isRevealingTheme)
-                Positioned.fill(
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(begin: 0.0, end: 1500.0), // Expands beyond screen bounds
-                    duration: const Duration(milliseconds: 400),
-                    onEnd: () {
-                      final currentTheme = ref.read(themeModeProvider);
-                      ref.read(themeModeProvider.notifier).state = 
-                          currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
-                      
-                      // Fade out the transition layer seamlessly
-                      Future.delayed(const Duration(milliseconds: 50), () {
-                        if (mounted) setState(() => _isHidingThemeTransition = true);
-                      });
-                      
-                      Future.delayed(const Duration(milliseconds: 350), () {
-                        if (mounted) {
-                          setState(() {
-                            _isRevealingTheme = false;
-                            _isHidingThemeTransition = false;
-                          });
-                        }
-                      });
-                    },
-                    builder: (context, radius, child) {
-                      final newBgColor = isDarkMode ? Colors.white : const Color(0xFF171717); // Target theme color
-                      return AnimatedOpacity(
-                        opacity: _isHidingThemeTransition ? 0.0 : 1.0,
-                        duration: const Duration(milliseconds: 300),
-                        child: ClipPath(
-                          clipper: _CircleClipper(_themeRevealCenter, radius),
-                          child: Container(color: newBgColor),
-                        ),
-                      );
-                    },
-                  ),
-                ),
 
               // Top HUD Info
               Positioned(
@@ -307,12 +267,21 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                           );
 
                           _triggerSatelliteFlight('theme', themeTarget, _activeColor, () async {
-                            setState(() {
-                              _isRevealingTheme = true;
-                              _themeRevealCenter = themeTarget;
-                            });
-                            // Wait for the reveal animation (400ms) to complete before returning
-                            await Future.delayed(const Duration(milliseconds: 400));
+                            final currentTheme = ref.read(themeModeProvider);
+                            final nextThemeMode = currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                            
+                            // Trigger seamless package transition
+                            ThemeSwitcher.of(context).changeTheme(
+                              theme: nextThemeMode == ThemeMode.dark ? AppTheme.darkTheme : AppTheme.lightTheme,
+                              offset: themeTarget,
+                              isReversed: nextThemeMode == ThemeMode.light, // nice reverse effect based on theme
+                            );
+
+                            // Sync Riverpod state
+                            ref.read(themeModeProvider.notifier).state = nextThemeMode;
+                            
+                            // Wait a moment for transition to play
+                            await Future.delayed(const Duration(milliseconds: 300));
                           });
                         },
                         activeColor: _activeColor,
@@ -422,8 +391,33 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
+  }
+
+  void _animateCamera(double targetX, double targetY, double targetZoom) {
+    final startX = ref.read(viewportStateProvider).x;
+    final startY = ref.read(viewportStateProvider).y;
+    final startZoom = ref.read(viewportStateProvider).zoom;
+    
+    final curved = CurvedAnimation(parent: _cameraController, curve: Curves.easeOutCubic);
+    
+    if (_cameraListener != null) {
+      _cameraController.removeListener(_cameraListener!);
+    }
+
+    _cameraListener = () {
+      if (mounted) {
+        ref.read(viewportStateProvider.notifier).updateViewport(
+          x: startX + (targetX - startX) * curved.value,
+          y: startY + (targetY - startY) * curved.value,
+          zoom: startZoom + (targetZoom - startZoom) * curved.value,
+        );
+      }
+    };
+    
+    _cameraController.addListener(_cameraListener!);
+    _cameraController.forward(from: 0);
   }
 }
 
@@ -486,20 +480,4 @@ class _DotGridPainter extends CustomPainter {
   }
 }
 
-class _CircleClipper extends CustomClipper<Path> {
-  final Offset center;
-  final double radius;
-
-  _CircleClipper(this.center, this.radius);
-
-  @override
-  Path getClip(Size size) {
-    return Path()..addOval(Rect.fromCircle(center: center, radius: radius));
-  }
-
-  @override
-  bool shouldReclip(covariant _CircleClipper oldClipper) {
-    return oldClipper.radius != radius || oldClipper.center != center;
-  }
-}
 

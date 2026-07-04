@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/board/presentation/pages/scatter_board_page.dart';
+import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 
 void main() {
   runApp(
@@ -32,12 +33,16 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     
-    return MaterialApp.router(
-      title: 'Scatter',
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: themeMode,
-      routerConfig: _router,
+    return ThemeProvider(
+      initTheme: themeMode == ThemeMode.dark ? AppTheme.darkTheme : AppTheme.lightTheme,
+      builder: (context, myTheme) {
+        return MaterialApp.router(
+          title: 'Scatter',
+          theme: myTheme,
+          routerConfig: _router,
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }
