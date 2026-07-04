@@ -319,15 +319,27 @@ class _DotGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double spacing = 24.0 * zoom;
-    final double radius = 1.0 * zoom;
+    double spacing = 24.0 * zoom;
+    double radius = 1.0 * zoom;
+
+    // Performance fix: when zoomed out significantly (like in orbit mode), 
+    // the spacing becomes extremely small, causing hundreds of thousands of dots to be drawn.
+    // We scale up the spacing by powers of 2 to keep density manageable.
+    while (spacing < 16.0) {
+      spacing *= 2.0;
+    }
+
+    // Ensure dots are always visible even when heavily zoomed out
+    if (radius < 1.0) {
+      radius = 1.0;
+    }
     
     // Web app dot styling
-    // Light: rgba(0,0,0,0.04), Dark: rgba(255,255,255,0.06)
+    // Light mode opacity increased for better visibility
     final paint = Paint()
       ..color = isDarkMode 
-          ? Colors.white.withValues(alpha: 0.06) 
-          : Colors.black.withValues(alpha: 0.04)
+          ? Colors.white.withValues(alpha: 0.10) 
+          : Colors.black.withValues(alpha: 0.08)
       ..style = PaintingStyle.fill;
 
     // Calculate the offset based on viewport translation
