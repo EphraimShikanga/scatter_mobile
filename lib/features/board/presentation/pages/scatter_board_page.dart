@@ -24,7 +24,9 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Single
   double _activeThickness = 3.0;
   bool _isOrbitMode = false;
   late final AnimationController _cameraController;
+  late final AnimationController _flightAnimController;
   VoidCallback? _cameraListener;
+  SatelliteFlightState _flightState = SatelliteFlightState.idle;
 
   @override
   void initState() {
@@ -33,12 +35,40 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Single
       vsync: this,
       duration: const Duration(milliseconds: 650),
     );
+    _flightAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
   }
 
   @override
   void dispose() {
     _cameraController.dispose();
+    _flightAnimController.dispose();
     super.dispose();
+  }
+
+  void _triggerSatelliteFlight(String type, Offset target, String colorHex, VoidCallback onImpact) {
+    setState(() {
+      _flightState = SatelliteFlightState(
+        phase: 'outgoing',
+        type: type,
+        targetPos: target,
+        colorHex: colorHex,
+      );
+    });
+    
+    _flightAnimController.forward(from: 0.0).then((_) {
+      onImpact();
+      setState(() {
+         _flightState = SatelliteFlightState(
+           phase: 'none',
+           type: 'none',
+           targetPos: Offset.zero,
+           colorHex: colorHex,
+         );
+      });
+    });
   }
 
   void _animateCamera(double targetX, double targetY, double targetZoom) {
@@ -213,39 +243,48 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Single
                       RadialMenuWidget(
                         isDarkMode: isDarkMode,
                         onToggleDarkMode: () {
-                          final currentTheme = ref.read(themeModeProvider);
-                          ref.read(themeModeProvider.notifier).state = 
-                              currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                          _triggerSatelliteFlight('theme', animatedFamiliarPos, _activeColor, () {
+                            final currentTheme = ref.read(themeModeProvider);
+                            ref.read(themeModeProvider.notifier).state = 
+                                currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                          });
                         },
                         activeColor: _activeColor,
                         onColorChange: (c) => setState(() => _activeColor = c),
                         activeThickness: _activeThickness,
                         onThicknessChange: (t) => setState(() => _activeThickness = t),
-                        onAddTile: (clusterId) {
-                          final newTile = ChromaTile(
-                            id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
-                            x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
-                            y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
-                            width: 280,
-                            height: 220,
-                            colorName: 'custom',
-                            colorHex: _activeColor,
-                            title: 'New Note',
-                            content: '',
-                            strokes: [],
-                            isArchived: false,
-                            createdAt: DateTime.now().millisecondsSinceEpoch,
-                          );
-                          ref.read(tilesStateProvider.notifier).addTile(newTile);
+                        onAddTile: (clusterId, colorHex) {
+                          final screenSize = MediaQuery.of(context).size;
+                          final spawnTarget = Offset(screenSize.width / 2, screenSize.height / 2);
+                          
+                          _triggerSatelliteFlight('spawn', spawnTarget, colorHex, () {
+                            final newTile = ChromaTile(
+                              id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
+                              x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
+                              y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
+                              width: 280,
+                              height: 220,
+                              colorName: 'custom',
+                              colorHex: colorHex,
+                              title: 'New Note',
+                              content: '',
+                              strokes: [],
+                              isArchived: false,
+                              createdAt: DateTime.now().millisecondsSinceEpoch,
+                            );
+                            ref.read(tilesStateProvider.notifier).addTile(newTile);
+                          });
                         },
                         onClearCanvas: () {
                           ref.read(tilesStateProvider.notifier).clear();
                         },
                         onResetCamera: () {
-                          _animateCamera(0, 0, 1.0);
-                          if (_isOrbitMode) {
-                            setState(() => _isOrbitMode = false);
-                          }
+                          _triggerSatelliteFlight('recenter', animatedFamiliarPos, _activeColor, () {
+                            _animateCamera(0, 0, 1.0);
+                            if (_isOrbitMode) {
+                              setState(() => _isOrbitMode = false);
+                            }
+                          });
                         },
                         isOrbitMode: _isOrbitMode,
                         onDoubleTapMenu: () {
@@ -283,14 +322,20 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Single
                       ),
 
                       // Satellite Flight Renderer
-                      SatelliteFlightRendererWidget(
-                        flight: SatelliteFlightState.idle,
-                        familiarPos: animatedFamiliarPos,
-                        isDarkMode: isDarkMode,
-                        isMenuOpen: _isMenuOpen,
-                        zoomScale: viewport.zoom,
-                        screenSize: MediaQuery.of(context).size,
-                        selectedTileScreenPos: null, // to be updated when focus mode works
+                      AnimatedBuilder(
+                        animation: _flightAnimController,
+                        builder: (context, child) {
+                          return SatelliteFlightRendererWidget(
+                            flight: _flightState,
+                            familiarPos: animatedFamiliarPos,
+                            isDarkMode: isDarkMode,
+                            isMenuOpen: _isMenuOpen,
+                            zoomScale: viewport.zoom,
+                            screenSize: MediaQuery.of(context).size,
+                            selectedTileScreenPos: null, // to be updated when focus mode works
+                            flightProgress: _flightAnimController.value,
+                          );
+                        }
                       ),
                     ],
                   );

@@ -33,6 +33,7 @@ class SatelliteFlightRendererWidget extends StatefulWidget {
   final Offset? selectedTileScreenPos;
   final Size? selectedTileSize;
   final String? selectedTileColorHex;
+  final double flightProgress;
   final VoidCallback? onImpact;
   final VoidCallback? onComplete;
 
@@ -47,6 +48,7 @@ class SatelliteFlightRendererWidget extends StatefulWidget {
     this.selectedTileScreenPos,
     this.selectedTileSize,
     this.selectedTileColorHex,
+    this.flightProgress = 0.0,
     this.onImpact,
     this.onComplete,
   });
@@ -118,6 +120,12 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
                 localY = sin(time * 0.02) * 44;
                 localRotate = time * 4;
               }
+            } else if (widget.flight.phase == 'outgoing') {
+              // Interpolate from familiar base to target
+              final targetLocal = widget.flight.targetPos - widget.familiarPos;
+              localX = targetLocal.dx * widget.flightProgress;
+              localY = targetLocal.dy * widget.flightProgress;
+              localRotate = time * 20; // Spin fast during flight
             }
 
             Offset basePos = widget.familiarPos;

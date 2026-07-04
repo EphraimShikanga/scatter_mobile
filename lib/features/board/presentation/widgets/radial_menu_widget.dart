@@ -10,7 +10,7 @@ class RadialMenuWidget extends StatefulWidget {
   final Function(String) onColorChange;
   final double activeThickness;
   final Function(double) onThicknessChange;
-  final Function(String?) onAddTile;
+  final Function(String, String) onAddTile;
   final VoidCallback onClearCanvas;
   final VoidCallback onResetCamera;
   final bool isOrbitMode;
@@ -265,7 +265,10 @@ class _RadialMenuWidgetState extends State<RadialMenuWidget> {
 
   Widget _buildColorBtn(String name, String hex) {
     return GestureDetector(
-      onTap: () => widget.onAddTile(name),
+      onTap: () {
+        widget.onColorChange(hex);
+        widget.onAddTile(name, hex);
+      },
       child: Container(
         width: 32,
         height: 32,
