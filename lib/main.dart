@@ -6,10 +6,18 @@ import 'core/providers/theme_provider.dart';
 import 'features/board/presentation/pages/scatter_board_page.dart';
 import 'package:animated_theme_switcher/animated_theme_switcher.dart';
 
-void main() {
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+
   runApp(
-    const ProviderScope(
-      child: MyApp(),
+    ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const MyApp(),
     ),
   );
 }
@@ -31,14 +39,21 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
+    final themeMode = ref.read(themeModeProvider);
     
     return ThemeProvider(
-      initTheme: themeMode == ThemeMode.dark ? AppTheme.darkTheme : AppTheme.lightTheme,
-      builder: (context, myTheme) {
+      duration: const Duration(seconds: 1),
+      themeModel: ThemeModel(
+        themeMode: themeMode,
+        lightTheme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+      ),
+      builder: (context, themeModel) {
         return MaterialApp.router(
           title: 'Scatter',
-          theme: myTheme,
+          themeMode: themeModel.themeMode,
+          theme: themeModel.lightTheme,
+          darkTheme: themeModel.darkTheme,
           routerConfig: _router,
           debugShowCheckedModeBanner: false,
         );
