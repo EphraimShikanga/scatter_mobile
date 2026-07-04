@@ -6,6 +6,7 @@ import '../../../../core/providers/tiles_provider.dart';
 import '../widgets/chroma_tile_widget.dart';
 import '../widgets/radial_menu_widget.dart';
 import '../widgets/familiar_widget.dart';
+import '../widgets/satellite_flight_renderer_widget.dart';
 import '../../../../core/models/chroma_tile.dart';
 
 class ScatterBoardPage extends ConsumerStatefulWidget {
@@ -156,11 +157,23 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
               // Familiar Orb
               FamiliarWidget(
                 state: FamiliarState.idle,
-                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 100),
+                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
                 isDarkMode: isDarkMode,
                 isSatelliteFlying: false,
+                onOrbClick: () => setState(() => _isMenuOpen = !_isMenuOpen),
               ),
 
+              // Satellite Flight Renderer
+              SatelliteFlightRendererWidget(
+                flight: SatelliteFlightState.idle,
+                familiarPos: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 56),
+                isDarkMode: isDarkMode,
+                isMenuOpen: _isMenuOpen,
+                zoomScale: viewport.zoom,
+                screenSize: MediaQuery.of(context).size,
+                selectedTileScreenPos: null, // to be updated when focus mode works
+              ),
+              
               // Radial Menu
               RadialMenuWidget(
                 isDarkMode: isDarkMode,
