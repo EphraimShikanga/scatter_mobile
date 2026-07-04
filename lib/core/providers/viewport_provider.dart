@@ -17,4 +17,8 @@ class ViewportState extends _$ViewportState {
       zoom: zoom ?? state.zoom,
     );
   }
+
+  void reset() {
+    state = const Viewport(x: 0, y: 0, zoom: 1.0);
+  }
 }

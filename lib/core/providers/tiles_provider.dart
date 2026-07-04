@@ -2,14 +2,15 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/chroma_tile.dart';
 import '../models/stroke.dart';
 
+import '../constants/initial_tiles.dart';
+
 part 'tiles_provider.g.dart';
 
 @riverpod
 class TilesState extends _$TilesState {
   @override
   List<ChromaTile> build() {
-    // We will initialize with INITIAL_TILES later
-    return [];
+    return initialTiles;
   }
 
   void addTile(ChromaTile tile) {
@@ -32,5 +33,9 @@ class TilesState extends _$TilesState {
       }
       return tile;
     }).toList();
+  }
+
+  void clear() {
+    state = [];
   }
 }

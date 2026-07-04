@@ -3,6 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/providers/viewport_provider.dart';
 import '../../../../core/providers/tiles_provider.dart';
+import '../widgets/chroma_tile_widget.dart';
+import '../widgets/radial_menu_widget.dart';
+import '../widgets/familiar_widget.dart';
+import '../../../../core/models/chroma_tile.dart';
 
 class ScatterBoardPage extends ConsumerStatefulWidget {
   const ScatterBoardPage({super.key});
@@ -13,6 +17,9 @@ class ScatterBoardPage extends ConsumerStatefulWidget {
 
 class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
   double _startZoom = 1.0;
+  bool _isMenuOpen = false;
+  String _activeColor = '#FFEF00'; // Canary default
+  double _activeThickness = 3.0;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +79,20 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        // Tiles will be rendered here later
+                        ...tiles.map((tile) {
+                          return ChromaTileWidget(
+                            key: ValueKey(tile.id),
+                            tile: tile,
+                            isDarkMode: isDarkMode,
+                            zoomScale: viewport.zoom,
+                            onDrag: (id, dx, dy) {
+                              ref.read(tilesStateProvider.notifier).updateTilePosition(id, dx / viewport.zoom, dy / viewport.zoom);
+                            },
+                            onTap: (id) {
+                              // Focus mode handled later
+                            },
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -131,6 +151,58 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> {
                     ],
                   ),
                 ),
+              ),
+
+              // Familiar Orb
+              FamiliarWidget(
+                state: FamiliarState.idle,
+                position: Offset(MediaQuery.of(context).size.width / 2, MediaQuery.of(context).size.height - 100),
+                isDarkMode: isDarkMode,
+                isSatelliteFlying: false,
+              ),
+
+              // Radial Menu
+              RadialMenuWidget(
+                isDarkMode: isDarkMode,
+                onToggleDarkMode: () {
+                  // Theme toggling will need AppTheme setup at the app level.
+                  // For now we don't have a direct theme toggle provider yet.
+                },
+                activeColor: _activeColor,
+                onColorChange: (c) => setState(() => _activeColor = c),
+                activeThickness: _activeThickness,
+                onThicknessChange: (t) => setState(() => _activeThickness = t),
+                onAddTile: (clusterId) {
+                  final newTile = ChromaTile(
+                    id: 'tile-${DateTime.now().millisecondsSinceEpoch}',
+                    x: -viewport.x + (MediaQuery.of(context).size.width / 2) / viewport.zoom - 140,
+                    y: -viewport.y + (MediaQuery.of(context).size.height / 2) / viewport.zoom - 110,
+                    width: 280,
+                    height: 220,
+                    colorName: 'custom',
+                    colorHex: _activeColor,
+                    title: 'New Note',
+                    content: '',
+                    strokes: [],
+                    isArchived: false,
+                    createdAt: DateTime.now().millisecondsSinceEpoch,
+                  );
+                  ref.read(tilesStateProvider.notifier).addTile(newTile);
+                },
+                onClearCanvas: () {
+                  ref.read(tilesStateProvider.notifier).clear();
+                },
+                onResetCamera: () {
+                  ref.read(viewportStateProvider.notifier).reset();
+                },
+                isOrbitMode: false,
+                zoom: viewport.zoom,
+                onZoomChange: (z) {
+                  ref.read(viewportStateProvider.notifier).updateViewport(zoom: z);
+                },
+                isMenuOpen: _isMenuOpen,
+                onToggleMenu: () => setState(() => _isMenuOpen = !_isMenuOpen),
+                familiarX: MediaQuery.of(context).size.width / 2,
               ),
             ],
           ),
