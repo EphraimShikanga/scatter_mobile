@@ -37,7 +37,7 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
     );
     _flightAnimController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 650),
     );
   }
 
@@ -62,11 +62,21 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
       onImpact();
       setState(() {
          _flightState = SatelliteFlightState(
-           phase: 'none',
-           type: 'none',
-           targetPos: Offset.zero,
+           phase: 'returning',
+           type: type,
+           targetPos: target,
            colorHex: colorHex,
          );
+      });
+      _flightAnimController.reverse(from: 1.0).then((_) {
+        setState(() {
+          _flightState = SatelliteFlightState(
+            phase: 'none',
+            type: 'none',
+            targetPos: Offset.zero,
+            colorHex: colorHex,
+          );
+        });
       });
     });
   }
@@ -243,7 +253,10 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                       RadialMenuWidget(
                         isDarkMode: isDarkMode,
                         onToggleDarkMode: () {
-                          _triggerSatelliteFlight('theme', animatedFamiliarPos, _activeColor, () {
+                          final screenSize = MediaQuery.of(context).size;
+                          final themeTarget = Offset(screenSize.width - 40, 40); // Top right
+
+                          _triggerSatelliteFlight('theme', themeTarget, _activeColor, () {
                             final currentTheme = ref.read(themeModeProvider);
                             ref.read(themeModeProvider.notifier).state = 
                                 currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;

@@ -120,7 +120,7 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
                 localY = sin(time * 0.02) * 44;
                 localRotate = time * 4;
               }
-            } else if (widget.flight.phase == 'outgoing') {
+            } else if (widget.flight.phase == 'outgoing' || widget.flight.phase == 'returning') {
               // Interpolate from familiar base to target
               final targetLocal = widget.flight.targetPos - widget.familiarPos;
               localX = targetLocal.dx * widget.flightProgress;
