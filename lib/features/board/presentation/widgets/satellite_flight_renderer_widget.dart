@@ -19,7 +19,7 @@ class SatelliteFlightState {
     phase: 'none',
     type: 'none',
     targetPos: Offset.zero,
-    colorHex: '#FFFFFF',
+    colorHex: 'rainbow',
   );
 }
 
@@ -79,8 +79,10 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
     super.dispose();
   }
 
-  Color _parseColor(String? hex) {
-    if (hex == null) return Colors.white;
+  Color _parseColor(String? hex, double time) {
+    if (hex == null || hex == 'rainbow' || hex == '#FFFFFF') {
+      return HSVColor.fromAHSV(1.0, (time * 50) % 360, 0.8, 1.0).toColor();
+    }
     if (hex.startsWith('#')) hex = hex.substring(1);
     if (hex.length == 6) hex = 'FF$hex';
     return Color(int.tryParse(hex, radix: 16) ?? 0xFFFFFFFF);
@@ -133,8 +135,8 @@ class _SatelliteFlightRendererWidgetState extends State<SatelliteFlightRendererW
               basePos = Offset(widget.selectedTileScreenPos!.dx + cardW / 2, widget.selectedTileScreenPos!.dy + cardH / 2);
             }
 
-            final dotColor = _parseColor(widget.selectedTileColorHex);
-            final flightColor = _parseColor(widget.flight.colorHex);
+            final dotColor = _parseColor(widget.selectedTileColorHex, time);
+            final flightColor = _parseColor(widget.flight.colorHex, time);
 
             return CustomPaint(
               painter: _SatellitePainter(
@@ -203,11 +205,11 @@ class _SatellitePainter extends CustomPainter {
         final ty = sin(trailTime * 0.25) * ry;
         final opacity = 0.5 * (1 - i / 6);
         final scale = 1 - i * 0.1;
-        final trailSize = max(2.5, 6.5) * scale;
+        final trailSize = max(2.5, 6.5) * scale * zoomScale;
         
         final paint = Paint()
           ..color = dotColor.withValues(alpha: opacity)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+          ..maskFilter = MaskFilter.blur(BlurStyle.normal, 10 * zoomScale);
         
         canvas.drawCircle(Offset(basePos.dx + tx, basePos.dy + ty), trailSize / 2, paint);
         
@@ -270,23 +272,23 @@ class _SatellitePainter extends CustomPainter {
     // Outer glow
     final glowPaint = Paint()
       ..color = flightColor
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14.0);
-    canvas.drawCircle(satelliteCenter, 5.5, glowPaint);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 14.0 * zoomScale);
+    canvas.drawCircle(satelliteCenter, 5.5 * zoomScale, glowPaint);
     
     // Outer secondary glow
     final corePaint = Paint()
       ..color = dotColor.withValues(alpha: 0.9)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-    canvas.drawCircle(satelliteCenter, 4.0, corePaint);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 2.0 * zoomScale);
+    canvas.drawCircle(satelliteCenter, 4.0 * zoomScale, corePaint);
     
     final innerPaint = Paint()..color = Colors.white;
-    canvas.drawCircle(satelliteCenter, 1.5, innerPaint);
+    canvas.drawCircle(satelliteCenter, 1.5 * zoomScale, innerPaint);
     
     // Inner white dot
     final dotPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.95)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
-    canvas.drawCircle(satelliteCenter, 0.75, dotPaint);
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, 1 * zoomScale);
+    canvas.drawCircle(satelliteCenter, 0.75 * zoomScale, dotPaint);
 
   }
 

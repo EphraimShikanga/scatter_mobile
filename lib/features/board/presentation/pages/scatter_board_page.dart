@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -27,6 +28,9 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
   late final AnimationController _flightAnimController;
   VoidCallback? _cameraListener;
   SatelliteFlightState _flightState = SatelliteFlightState.idle;
+
+  bool _isRevealingTheme = false;
+  Offset _themeRevealCenter = Offset.zero;
 
   @override
   void initState() {
@@ -181,6 +185,28 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                 ),
               ),
 
+              // Expanding Circular Theme Reveal
+              if (_isRevealingTheme)
+                Positioned.fill(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(begin: 0.0, end: 1500.0), // Expands beyond screen bounds
+                    duration: const Duration(milliseconds: 400),
+                    onEnd: () {
+                      final currentTheme = ref.read(themeModeProvider);
+                      ref.read(themeModeProvider.notifier).state = 
+                          currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                      setState(() => _isRevealingTheme = false);
+                    },
+                    builder: (context, radius, child) {
+                      final newBgColor = isDarkMode ? Colors.white : const Color(0xFF171717); // Target theme color
+                      return ClipPath(
+                        clipper: _CircleClipper(_themeRevealCenter, radius),
+                        child: Container(color: newBgColor),
+                      );
+                    },
+                  ),
+                ),
+
               // Top HUD Info
               Positioned(
                 top: 24,
@@ -254,12 +280,17 @@ class _ScatterBoardPageState extends ConsumerState<ScatterBoardPage> with Ticker
                         isDarkMode: isDarkMode,
                         onToggleDarkMode: () {
                           final screenSize = MediaQuery.of(context).size;
-                          final themeTarget = Offset(screenSize.width - 40, 40); // Top right
+                          final random = math.Random();
+                          final themeTarget = Offset(
+                            random.nextDouble() * screenSize.width,
+                            random.nextDouble() * screenSize.height,
+                          );
 
                           _triggerSatelliteFlight('theme', themeTarget, _activeColor, () {
-                            final currentTheme = ref.read(themeModeProvider);
-                            ref.read(themeModeProvider.notifier).state = 
-                                currentTheme == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+                            setState(() {
+                              _isRevealingTheme = true;
+                              _themeRevealCenter = themeTarget;
+                            });
                           });
                         },
                         activeColor: _activeColor,
@@ -420,3 +451,21 @@ class _DotGridPainter extends CustomPainter {
            oldDelegate.zoom != zoom;
   }
 }
+
+class _CircleClipper extends CustomClipper<Path> {
+  final Offset center;
+  final double radius;
+
+  _CircleClipper(this.center, this.radius);
+
+  @override
+  Path getClip(Size size) {
+    return Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+  }
+
+  @override
+  bool shouldReclip(covariant _CircleClipper oldClipper) {
+    return oldClipper.radius != radius || oldClipper.center != center;
+  }
+}
+
